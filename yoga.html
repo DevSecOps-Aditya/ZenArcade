@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenArcade AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/pose@0.8.3/dist/teachablemachine-pose.min.js"></script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #09120e 0%, #0d2017 40%, #162e24 70%, #070f0b 100%);
+            color: #f2f7f5;
+            font-family: system-ui, -apple-system, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem 1rem;
+            transition: background 1.2s ease-in-out;
+        }
+
+        .canopy-shadow {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% -20%, rgba(52, 211, 153, 0.12) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .spore-grid {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle at center, rgba(167, 243, 208, 0.04) 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: rgba(13, 27, 21, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(167, 243, 208, 0.12);
+            border-radius: 0.85rem;
+        }
+
+        header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            max-height: 65px;
+        }
+        .header-title h1 { font-weight: 300; font-size: 1.4rem; letter-spacing: -0.03em; }
+        .header-title h1 span { color: #34d399; }
+        .header-title p { font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.12em; color: #a7f3d0; opacity: 0.7; font-family: monospace; }
+
+        .scoreboard { padding: 0.5rem 1.25rem; display: flex; align-items: center; gap: 1.25rem; }
+        .score-block { text-align: center; }
+        .score-lbl { font-size: 0.5rem; text-transform: uppercase; color: rgba(167, 243, 208, 0.5); font-family: monospace; }
+        .score-val { font-size: 1.3rem; font-family: monospace; font-weight: bold; margin: 0; }
+        .divider { width: 1px; height: 1.5rem; background: rgba(167,243,208,0.15); }
+
+        .workspace {
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            z-index: 10;
+            min-height: 0;
+        }
+
+        #webcam-container {
+            width: 120px;
+            height: 120px;
+            position: relative;
+            background: rgba(6, 12, 9, 0.85);
+            border: 1px solid rgba(167, 243, 208, 0.18);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.55);
+        }
+        #webcam-container canvas { width: 100% !important; height: 100% !important; object-fit: cover; }
+        #webcam-container.camera-active .camera-placeholder { display: none; }
+        .camera-placeholder { display: flex; flex-direction: column; align-items: center; }
+        .camera-placeholder svg { width: 16px; height: 16px; }
+        .cam-off-lbl { font-size: 0.5rem; font-family: monospace; text-transform: uppercase; color: rgba(167, 243, 208, 0.4); margin-top: 0.25rem; }
+
+        .flow-options {
+            display: flex;
+            gap: 0.65rem;
+            margin-top: 1.1rem;
+        }
+        .flow-btn {
+            padding: 0.45rem 1.25rem;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: #ffffff;
+            font-weight: 600;
+            border: none;
+            border-radius: 2rem;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(4, 120, 87, 0.25);
+        }
+        .flow-btn:hover { transform: translateY(-1px); box-shadow: 0 0 15px rgba(52, 211, 153, 0.45); }
+
+        .orb-viewport { position: relative; width: 13.5rem; height: 13.5rem; display: flex; align-items: center; justify-content: center; }
+
+        #glow-layer {
+            position: absolute;
+            width: 11rem;
+            height: 11rem;
+            border-radius: 50%;
+            background: rgba(52, 211, 153, 0.08);
+            filter: blur(55px);
+            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        #sharp-glow-layer {
+            position: absolute;
+            width: 10rem;
+            height: 10rem;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(52,211,153,0.95) 0%, rgba(16,185,129,0.3) 45%, transparent 70%);
+            filter: blur(15px);
+            opacity: 0;
+            transform: scale(0.6);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            mix-blend-mode: screen;
+        }
+        #zen-orb {
+            width: 9.5rem;
+            height: 9.5rem;
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 100%);
+            border: 1px solid rgba(167, 243, 208, 0.16);
+            box-shadow: 0 22px 45px rgba(0,0,0,0.55);
+            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        #icon-slot svg { width: 2.8rem; height: 2.8rem; transition: all 0.5s; }
+        .ring-1 { position: absolute; inset: -0.85rem; border-radius: 50%; border: 1px dashed rgba(167, 243, 208, 0.06); animation: spin 40s linear infinite; }
+
+        .status-panel { text-align: center; }
+        .status-panel p { font-size: 0.55rem; text-transform: uppercase; color: rgba(167, 243, 208, 0.4); font-family: monospace; letter-spacing: 0.05em; }
+        #pose-title { font-weight: 300; font-size: 1.3rem; color: #ecfdf5; transition: color 0.4s; }
+
+        footer {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.35rem;
+            z-index: 10;
+            max-height: 85px;
+        }
+        .shortcut-dish { padding: 0.35rem; border-radius: 9999px; display: flex; gap: 0.25rem; max-width: 95vw; overflow-x: auto; }
+        .btn-pill {
+            background: transparent;
+            color: rgba(167, 243, 208, 0.55);
+            border: none;
+            padding: 0.45rem 0.9rem;
+            border-radius: 9999px;
+            font-size: 0.65rem;
+            font-family: monospace;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.25s ease;
+        }
+        .btn-pill:hover { color: #ffffff; background: rgba(167, 243, 208, 0.08); }
+        .btn-pill.active { background: #f2f7f5; color: #0d1712; font-weight: 600; }
+        .footer-tip { font-size: 0.5rem; font-family: monospace; color: rgba(167, 243, 208, 0.2); }
+
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        body {
+            position: relative;
+            isolation: isolate;
+            width: 100%;
+            min-height: 100vh;
+            min-height: 100svh;
+            height: auto;
+            overflow-x: hidden;
+            overflow-y: auto;
+            justify-content: flex-start;
+            gap: clamp(1.25rem, 3vh, 2rem);
+            padding: clamp(1.1rem, 3vw, 2.5rem);
+            background:
+                    radial-gradient(ellipse at 50% 45%, rgba(16, 185, 129, 0.1), transparent 42%),
+                    linear-gradient(135deg, #07110c 0%, #0c1c14 50%, #08120d 100%);
+        }
+
+        .canopy-shadow, .spore-grid { position: fixed; }
+        header, .workspace, footer { width: min(100%, 1180px); }
+        header {
+            max-height: none;
+            margin: 0 auto;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid rgba(167, 243, 208, 0.1);
+        }
+        .header-title p { margin-bottom: 0.3rem; font-size: 0.62rem; letter-spacing: 0.19em; }
+        .header-title h1 { font-size: clamp(1.45rem, 3vw, 1.85rem); font-weight: 500; }
+        .scoreboard {
+            padding: 0.7rem 1.1rem;
+            gap: 1.15rem;
+            border-radius: 1rem;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+        }
+        .score-lbl { font-size: 0.58rem; letter-spacing: 0.08em; }
+        .score-val { font-size: 1.2rem; }
+
+        .workspace {
+            flex: 1;
+            display: grid;
+            grid-template-columns: minmax(245px, 0.85fr) minmax(300px, 1.05fr) minmax(220px, 0.75fr);
+            align-items: center;
+            gap: clamp(1rem, 2.5vw, 2rem);
+            margin: 0 auto;
+            padding: 1rem 0;
+        }
+        .camera-card, .pose-guide {
+            min-width: 0;
+            padding: clamp(1.2rem, 2.5vw, 1.7rem);
+            border: 1px solid rgba(167, 243, 208, 0.12);
+            border-radius: 1.35rem;
+            background: linear-gradient(145deg, rgba(17, 39, 29, 0.86), rgba(8, 20, 14, 0.8));
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25), inset 0 1px rgba(255, 255, 255, 0.035);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+        }
+        .card-heading {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+        .eyebrow {
+            color: rgba(167, 243, 208, 0.55);
+            font-size: 0.62rem;
+            font-family: monospace;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+        .card-heading h2, .pose-guide h2 {
+            margin-top: 0.35rem;
+            font-size: 1.05rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+        }
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.55rem;
+            border: 1px solid rgba(167, 243, 208, 0.13);
+            border-radius: 999px;
+            color: rgba(226, 252, 240, 0.7);
+            font: 600 0.55rem monospace;
+            letter-spacing: 0.08em;
+        }
+        .live-badge::before {
+            width: 0.4rem;
+            height: 0.4rem;
+            border-radius: 50%;
+            background: #64746a;
+            content: "";
+        }
+        #webcam-container.camera-active ~ .live-badge::before,
+        .camera-card.camera-active .live-badge::before {
+            background: #34d399;
+            box-shadow: 0 0 10px rgba(52, 211, 153, 0.8);
+        }
+        .camera-stage {
+            display: grid;
+            place-items: center;
+            margin: 1.4rem 0 1rem;
+            padding: 0.8rem;
+            border: 1px solid rgba(167, 243, 208, 0.08);
+            border-radius: 1.2rem;
+            background: radial-gradient(circle, rgba(52, 211, 153, 0.08), transparent 68%);
+        }
+        #webcam-container {
+            width: clamp(150px, 17vw, 205px);
+            height: clamp(150px, 17vw, 205px);
+            flex: none;
+            border: 2px solid rgba(167, 243, 208, 0.2);
+            box-shadow: 0 0 0 7px rgba(167, 243, 208, 0.035), 0 18px 45px rgba(0, 0, 0, 0.4);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        #webcam-container.camera-active {
+            border-color: rgba(52, 211, 153, 0.75);
+            box-shadow: 0 0 0 7px rgba(52, 211, 153, 0.08), 0 0 35px rgba(16, 185, 129, 0.18);
+        }
+        .camera-placeholder { gap: 0.5rem; }
+        .camera-placeholder svg { width: 1.4rem; height: 1.4rem; }
+        .cam-off-lbl { max-width: 8rem; text-align: center; line-height: 1.5; }
+        .camera-help {
+            min-height: 2.6em;
+            color: rgba(220, 245, 232, 0.48);
+            font-size: 0.72rem;
+            line-height: 1.6;
+            text-align: center;
+        }
+        .flow-btn {
+            width: 100%;
+            min-height: 2.9rem;
+            padding: 0.75rem 1rem;
+            border: 1px solid rgba(110, 231, 183, 0.28);
+            border-radius: 0.9rem;
+            background: linear-gradient(135deg, #10a875, #087451);
+            font-size: 0.7rem;
+            letter-spacing: 0.1em;
+            box-shadow: 0 8px 22px rgba(4, 120, 87, 0.22);
+        }
+        .flow-btn:hover { background: linear-gradient(135deg, #18bd86, #09845d); }
+        .flow-btn:disabled { cursor: wait; opacity: 0.75; transform: none; }
+        .flow-btn:focus-visible, .btn-pill:focus-visible {
+            outline: 2px solid #a7f3d0;
+            outline-offset: 3px;
+        }
+
+        .practice-stage {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.9rem;
+            text-align: center;
+        }
+        .stage-heading { color: rgba(167, 243, 208, 0.56); font: 0.65rem monospace; letter-spacing: 0.16em; text-transform: uppercase; }
+        .orb-viewport { width: clamp(220px, 28vw, 330px); height: clamp(220px, 28vw, 330px); }
+        #glow-layer { width: 75%; height: 75%; background: rgba(52, 211, 153, 0.13); }
+        #sharp-glow-layer { width: 68%; height: 68%; }
+        #zen-orb {
+            width: 68%;
+            height: 68%;
+            border-color: rgba(167, 243, 208, 0.22);
+            background: radial-gradient(circle at 35% 30%, rgba(52, 211, 153, 0.18), rgba(10, 28, 19, 0.88) 65%);
+            box-shadow: 0 0 75px rgba(16, 185, 129, 0.1), inset 0 0 40px rgba(52, 211, 153, 0.045);
+        }
+        #icon-slot svg { width: 3.2rem; height: 3.2rem; }
+        .ring-1 { border-color: rgba(167, 243, 208, 0.13); }
+        .status-panel {
+            width: auto;
+            height: auto;
+            padding: 0.9rem 1.5rem;
+            border: 1px solid rgba(167, 243, 208, 0.12);
+            border-radius: 1rem;
+            background: rgba(13, 27, 21, 0.6);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.16);
+        }
+        .status-panel p { margin-bottom: 0.35rem; font-size: 0.58rem; }
+        #pose-title { font-size: clamp(1.25rem, 2.4vw, 1.7rem); font-weight: 500; }
+
+        .pose-guide h2 { margin-bottom: 0.35rem; font-size: 1.15rem; }
+        .guide-description { color: rgba(220, 245, 232, 0.48); font-size: 0.72rem; line-height: 1.55; }
+        .pose-list {
+            display: grid;
+            gap: 0.55rem;
+            margin-top: 1.25rem;
+            list-style: none;
+        }
+        .pose-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            padding: 0.65rem 0.7rem;
+            border: 1px solid rgba(167, 243, 208, 0.07);
+            border-radius: 0.75rem;
+            background: rgba(255, 255, 255, 0.018);
+            color: rgba(234, 250, 241, 0.76);
+            font-size: 0.73rem;
+        }
+        .pose-index {
+            display: grid;
+            width: 1.45rem;
+            height: 1.45rem;
+            flex: none;
+            place-items: center;
+            border-radius: 50%;
+            background: rgba(52, 211, 153, 0.1);
+            color: #6ee7b7;
+            font: 0.58rem monospace;
+        }
+        footer {
+            max-height: none;
+            margin: 0 auto;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(167, 243, 208, 0.1);
+        }
+        .shortcut-dish { flex-wrap: wrap; justify-content: center; padding: 0.45rem; }
+        .btn-pill { padding: 0.5rem 0.85rem; font-size: 0.62rem; }
+        .footer-tip { color: rgba(167, 243, 208, 0.42); font-size: 0.62rem; }
+
+        @media (max-width: 900px) {
+            .workspace { grid-template-columns: minmax(230px, 0.85fr) minmax(260px, 1fr); }
+            .pose-guide { grid-column: 1 / -1; }
+            .pose-list { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+            .pose-list li { flex-direction: column; justify-content: center; text-align: center; }
+        }
+        @media (max-width: 600px) {
+            body { gap: 1rem; padding: 1rem; }
+            header { align-items: flex-start; gap: 0.75rem; padding-bottom: 0.9rem; }
+            .header-title p { font-size: 0.5rem; }
+            .scoreboard { gap: 0.65rem; padding: 0.55rem 0.7rem; }
+            .score-lbl { font-size: 0.48rem; }
+            .score-val { font-size: 1rem; }
+            .workspace { grid-template-columns: minmax(0, 1fr); gap: 1rem; padding: 0.25rem 0; }
+            .camera-card { order: 1; }
+            .practice-stage { order: 2; padding: 0.5rem 0; }
+            .pose-guide { order: 3; grid-column: auto; }
+            .camera-stage { margin: 1rem 0 0.6rem; }
+            #webcam-container { width: 170px; height: 170px; }
+            .orb-viewport { width: 220px; height: 220px; }
+            .pose-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .pose-list li { flex-direction: row; justify-content: flex-start; text-align: left; }
+            footer { padding-top: 0.75rem; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+        }
+
+        :root {
+            color-scheme: light;
+            --page: #f3f2e9;
+            --ink: #263d32;
+            --muted: #6d7f72;
+            --sage: #728b78;
+            --sage-dark: #4c6855;
+            --line: rgba(67, 91, 72, 0.16);
+            --card: rgba(255, 255, 250, 0.78);
+        }
+        body {
+            color: var(--ink);
+            background:
+                    radial-gradient(ellipse at 50% 35%, rgba(196, 209, 183, 0.3), transparent 50%),
+                    linear-gradient(145deg, #f7f6ef, var(--page) 60%, #e9eee4);
+            font-family: "Segoe UI", system-ui, sans-serif;
+        }
+        .canopy-shadow {
+            background: radial-gradient(ellipse at 50% 0%, rgba(177, 196, 165, 0.16), transparent 65%);
+        }
+        .spore-grid {
+            opacity: 0.18;
+            background-image: radial-gradient(circle at center, rgba(91, 117, 92, 0.14) 1px, transparent 1px);
+            background-size: 34px 34px;
+        }
+        header {
+            padding-bottom: 1rem;
+            border-bottom-color: var(--line);
+        }
+        .header-title p, .eyebrow, .stage-heading {
+            color: var(--muted);
+            font-family: "Segoe UI", system-ui, sans-serif;
+            font-size: 0.66rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+        }
+        .header-title h1 { color: var(--ink); font-weight: 500; }
+        .header-title h1 span { color: var(--sage); }
+        .header-actions { display: flex; align-items: center; gap: 0.65rem; }
+        .sound-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 2.6rem;
+            padding: 0.6rem 0.9rem;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: rgba(255, 255, 250, 0.65);
+            color: var(--ink);
+            font: 600 0.72rem "Segoe UI", system-ui, sans-serif;
+            cursor: pointer;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.25s ease, border-color 0.25s ease;
+        }
+        .sound-toggle:hover { background: #fffef9; border-color: rgba(67, 91, 72, 0.3); }
+        .sound-toggle:focus-visible, .flow-btn:focus-visible {
+            outline: 2px solid var(--sage-dark);
+            outline-offset: 3px;
+        }
+        .workspace {
+            grid-template-columns: minmax(250px, 0.8fr) minmax(320px, 1.2fr);
+            gap: clamp(1.25rem, 3vw, 2.5rem);
+        }
+        .camera-card, .pose-guide {
+            border-color: var(--line);
+            border-radius: 1.15rem;
+            background: var(--card);
+            box-shadow: 0 12px 35px rgba(48, 65, 48, 0.06);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .card-heading h2, .pose-guide h2 { color: var(--ink); }
+        .live-badge {
+            border-color: var(--line);
+            color: var(--muted);
+            font-family: "Segoe UI", system-ui, sans-serif;
+        }
+        .live-badge::before { background: #a7b2a1; }
+        .camera-card.camera-active .live-badge::before {
+            background: #68886b;
+            box-shadow: 0 0 0 3px rgba(104, 136, 107, 0.12);
+        }
+        .camera-stage {
+            border-color: rgba(67, 91, 72, 0.1);
+            background: #e9eee5;
+        }
+        #webcam-container {
+            border-color: rgba(87, 116, 91, 0.3);
+            box-shadow: 0 0 0 5px rgba(87, 116, 91, 0.06), 0 10px 24px rgba(48, 65, 48, 0.12);
+        }
+        #webcam-container.camera-active {
+            border-color: var(--sage);
+            box-shadow: 0 0 0 5px rgba(87, 116, 91, 0.09), 0 10px 24px rgba(48, 65, 48, 0.12);
+        }
+        .camera-placeholder svg { color: var(--sage-dark) !important; opacity: 0.65 !important; }
+        .cam-off-lbl, .camera-help, .guide-description { color: var(--muted); }
+        .flow-btn {
+            border-color: transparent;
+            background: var(--sage-dark);
+            box-shadow: 0 5px 14px rgba(76, 104, 85, 0.14);
+        }
+        .flow-btn:hover { background: #405b48; box-shadow: 0 6px 16px rgba(76, 104, 85, 0.18); }
+        .welcome-message { max-width: 32rem; text-align: center; }
+        .welcome-message h2 {
+            margin-top: 0.45rem;
+            color: var(--ink);
+            font-size: clamp(1.45rem, 3vw, 2rem);
+            font-weight: 400;
+            letter-spacing: -0.035em;
+        }
+        .welcome-message p:last-child {
+            margin-top: 0.5rem;
+            color: var(--muted);
+            font-size: 0.84rem;
+            line-height: 1.6;
+        }
+        .stage-heading { display: none; }
+        .orb-viewport { width: clamp(210px, 25vw, 290px); height: clamp(210px, 25vw, 290px); }
+        #glow-layer {
+            background: rgba(142, 165, 137, 0.18);
+            filter: blur(48px);
+            animation: breathe 8s ease-in-out infinite;
+        }
+        #sharp-glow-layer { display: none; }
+        #zen-orb {
+            border-color: rgba(87, 116, 91, 0.24);
+            background: radial-gradient(circle at 35% 30%, #fffef8, #e4eadf 78%);
+            box-shadow: 0 12px 35px rgba(48, 65, 48, 0.1), inset 0 0 28px rgba(142, 165, 137, 0.12);
+        }
+        #icon-slot svg { stroke: var(--sage-dark); }
+        .ring-1 { border-color: rgba(87, 116, 91, 0.16); animation: none; }
+        .status-panel {
+            border-color: var(--line);
+            background: rgba(255, 255, 250, 0.72);
+            box-shadow: 0 8px 22px rgba(48, 65, 48, 0.05);
+        }
+        .status-panel p { color: var(--muted); font-family: "Segoe UI", system-ui, sans-serif; letter-spacing: 0.06em; }
+        #pose-title { color: var(--ink); }
+        .pose-guide {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
+            gap: 0.25rem 1.25rem;
+            padding: 1rem 1.25rem;
+        }
+        .pose-guide > .eyebrow, .pose-guide > h2 { grid-column: 1; }
+        .pose-guide h2 { margin-top: 0; font-size: 0.95rem; }
+        .guide-description { grid-column: 2; grid-row: 1; font-size: 0.75rem; }
+        .pose-list {
+            grid-column: 2;
+            grid-row: 2;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            margin-top: 0.25rem;
+        }
+        .pose-list li {
+            gap: 0.45rem;
+            padding: 0.4rem 0.65rem;
+            border-color: rgba(67, 91, 72, 0.1);
+            border-radius: 999px;
+            background: rgba(237, 241, 232, 0.7);
+            color: #435b49;
+            font-size: 0.7rem;
+        }
+        .pose-index {
+            width: 1.2rem;
+            height: 1.2rem;
+            background: rgba(114, 139, 120, 0.12);
+            color: var(--sage-dark);
+        }
+        footer { border-top-color: var(--line); }
+        .footer-tip { color: var(--muted); font-size: 0.68rem; }
+        @keyframes breathe {
+            0%, 100% { opacity: 0.45; transform: scale(0.96); }
+            50% { opacity: 0.72; transform: scale(1.04); }
+        }
+        @media (max-width: 900px) {
+            .workspace { grid-template-columns: minmax(230px, 0.85fr) minmax(260px, 1fr); }
+            .pose-guide { grid-column: 1 / -1; }
+            .pose-list { display: flex; }
+            .pose-list li { flex-direction: row; text-align: left; }
+        }
+        @media (max-width: 600px) {
+            .workspace { grid-template-columns: minmax(0, 1fr); }
+            .pose-guide {
+                grid-column: auto;
+                grid-template-columns: 1fr;
+                gap: 0.3rem;
+            }
+            .pose-guide > .eyebrow, .pose-guide > h2, .guide-description, .pose-list {
+                grid-column: 1;
+                grid-row: auto;
+            }
+            .guide-description { margin-top: 0.25rem; }
+            .pose-list { margin-top: 0.6rem; }
+            .welcome-message p:last-child { font-size: 0.78rem; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #glow-layer { animation: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="canopy-shadow"></div>
+<div class="spore-grid"></div>
+
+<audio id="nature-ambient" loop preload="auto">
+    <source src="ambient.mp3" type="audio/mpeg">
+</audio>
+
+<header>
+    <div class="header-title">
+        <p>A quiet space for mindful movement</p>
+        <h1>ZenArcade <span>AI</span></h1>
+    </div>
+    <nav class="header-actions" aria-label="Site navigation">
+        <a class="sound-toggle" href="index.html">Dashboard</a>
+        <button id="sound-toggle" class="sound-toggle" type="button" aria-pressed="false" aria-label="Turn ambient sound on">Sound off</button>
+    </nav>
+</header>
+
+<div class="workspace">
+    <section class="camera-card" aria-labelledby="camera-heading">
+        <div class="card-heading">
+            <div>
+                <p class="eyebrow">Live tracking</p>
+                <h2 id="camera-heading">Sanctuary feed</h2>
+            </div>
+            <span class="live-badge">CAMERA</span>
+        </div>
+
+        <div class="camera-stage">
+            <div id="webcam-container">
+                <div class="camera-placeholder">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="color: #a7f3d0; opacity: 0.6;"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                    <span id="camera-status" class="cam-off-lbl" role="status">Camera is off</span>
+                </div>
+            </div>
+        </div>
+        <p class="camera-help">Center yourself in the frame so the pose model can track your movement.</p>
+        <div class="flow-options" aria-label="Choose a flow">
+            <button class="flow-btn" type="button" data-flow="kinetic">Kinetic Flow</button>
+            <button class="flow-btn" type="button" data-flow="cosmic">Cosmic Flow</button>
+        </div>
+    </section>
+
+    <section class="practice-stage" aria-labelledby="pose-title">
+        <div class="welcome-message">
+            <p class="eyebrow">Welcome to ZenArcade</p>
+            <h2>Pause. Breathe. Move.</h2>
+            <p>Stand where your full body is visible, then choose a flow to begin.</p>
+        </div>
+        <div class="orb-viewport">
+            <div id="glow-layer"></div>
+            <div id="sharp-glow-layer"></div>
+            <div id="zen-orb">
+                <div id="icon-slot">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#a7f3d0" stroke-width="1.2"><circle cx="12" cy="12" r="10"/><path d="m12 8-4 4 4 4 4-4-4-4z"/></svg>
+                </div>
+                <div class="ring-1"></div>
+            </div>
+        </div>
+        <div class="status-panel" aria-live="polite">
+            <p id="pose-confidence">Waiting for pose</p>
+            <h2 id="pose-title">Ready</h2>
+        </div>
+    </section>
+
+    <aside class="pose-guide" aria-labelledby="pose-guide-heading">
+        <p class="eyebrow">Your model knows</p>
+        <h2 id="pose-guide-heading">Pose library</h2>
+        <p class="guide-description">Move naturally. Your current pose will appear in the center.</p>
+        <ul class="pose-list">
+            <li><span class="pose-index">01</span> Neutral</li>
+            <li><span class="pose-index">02</span> Lean left</li>
+            <li><span class="pose-index">03</span> Lean right</li>
+            <li><span class="pose-index">04</span> Surya salutation</li>
+            <li><span class="pose-index">05</span> Squat</li>
+        </ul>
+    </aside>
+</div>
+
+<footer>
+    <p class="footer-tip">Your camera is used for live pose detection and is not recorded.</p>
+</footer>
+
+<script>
+    const ambientAudio = document.getElementById('nature-ambient');
+    const soundToggle = document.getElementById('sound-toggle');
+    const flowButtons = document.querySelectorAll('.flow-btn');
+    const cameraCard = document.querySelector('.camera-card');
+    const webcamContainer = document.getElementById('webcam-container');
+    const cameraStatus = document.getElementById('camera-status');
+    const poseTitle = document.getElementById('pose-title');
+    const poseConfidence = document.getElementById('pose-confidence');
+    const modelURL = 'https://teachablemachine.withgoogle.com/models/B-kalij5H/';
+    let model;
+    let webcam;
+    let isPredicting = false;
+
+    ambientAudio.muted = true;
+    soundToggle.addEventListener('click', () => {
+        ambientAudio.muted = !ambientAudio.muted;
+        soundToggle.textContent = ambientAudio.muted ? 'Sound off' : 'Sound on';
+        soundToggle.setAttribute('aria-pressed', String(!ambientAudio.muted));
+        soundToggle.setAttribute(
+            'aria-label',
+            ambientAudio.muted ? 'Turn ambient sound on' : 'Turn ambient sound off'
+        );
+    });
+
+    async function startSanctuary(flow, button) {
+        ambientAudio.playbackRate = flow === 'cosmic' ? 0.6 : 0.8;
+        ambientAudio.muted = false;
+        soundToggle.textContent = 'Sound on';
+        soundToggle.setAttribute('aria-pressed', 'true');
+        soundToggle.setAttribute('aria-label', 'Turn ambient sound off');
+        ambientAudio.play().catch(error => {
+            console.error('Unable to play ambient audio:', error);
+        });
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            cameraStatus.textContent = 'Camera unavailable';
+            poseConfidence.textContent = 'Open this page over HTTPS or localhost';
+            return;
+        }
+
+        flowButtons.forEach(flowButton => {
+            flowButton.disabled = true;
+        });
+        button.textContent = 'Loading model…';
+        cameraStatus.textContent = 'Loading model…';
+
+        try {
+            if (!window.tmPose) {
+                throw new Error('Teachable Machine library failed to load.');
+            }
+
+            if (!model) {
+                model = await tmPose.load(
+                    modelURL + 'model.json',
+                    modelURL + 'metadata.json'
+                );
+            }
+
+            webcam = new tmPose.Webcam(240, 240, true);
+            cameraStatus.textContent = 'Requesting camera…';
+            await webcam.setup();
+            await webcam.play();
+            webcamContainer.appendChild(webcam.canvas);
+            webcamContainer.classList.add('camera-active');
+            cameraCard.classList.add('camera-active');
+            cameraStatus.textContent = 'Sanctuary Feed';
+            button.textContent = 'Sanctuary Active';
+            poseTitle.textContent = 'Looking for pose…';
+            isPredicting = true;
+            window.requestAnimationFrame(predictPose);
+        } catch (error) {
+            console.error('Unable to start pose detection:', error);
+            if (webcam && webcam.webcam) {
+                webcam.stop();
+            }
+            webcam = null;
+            cameraCard.classList.remove('camera-active');
+            const permissionDenied = error.name === 'NotAllowedError'
+                || String(error).toLowerCase().includes('denied access');
+            cameraStatus.textContent = permissionDenied
+                ? 'Allow camera access'
+                : 'Camera or model unavailable';
+            poseConfidence.textContent = 'Check camera permission and internet connection';
+            flowButtons.forEach(flowButton => {
+                flowButton.disabled = false;
+                flowButton.textContent = flowButton.dataset.flow === 'cosmic'
+                    ? 'Cosmic Flow'
+                    : 'Kinetic Flow';
+            });
+        }
+    }
+
+    flowButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            startSanctuary(button.dataset.flow, button);
+        });
+    });
+
+    async function predictPose() {
+        if (!isPredicting) return;
+
+        try {
+            webcam.update();
+            const { posenetOutput } = await model.estimatePose(webcam.canvas);
+            const predictions = await model.predict(posenetOutput);
+            const bestPrediction = predictions.reduce((best, prediction) =>
+                prediction.probability > best.probability ? prediction : best
+            );
+
+            if (bestPrediction.probability >= 0.6) {
+                poseTitle.textContent = bestPrediction.className
+                    .replace(/_/g, ' ')
+                    .replace(/\b\w/g, letter => letter.toUpperCase());
+                poseConfidence.textContent =
+                    `${Math.round(bestPrediction.probability * 100)}% confidence`;
+            } else {
+                poseTitle.textContent = 'Pose not clear';
+                poseConfidence.textContent = 'Move into camera view';
+            }
+        } catch (error) {
+            console.error('Pose detection failed:', error);
+            isPredicting = false;
+            if (webcam.webcam) webcam.stop();
+            webcamContainer.classList.remove('camera-active');
+            cameraCard.classList.remove('camera-active');
+            webcam.canvas.remove();
+            webcam = null;
+            cameraStatus.textContent = 'Pose detection stopped';
+            poseConfidence.textContent = 'Reload the page and try again';
+            flowButtons.forEach(flowButton => {
+                flowButton.disabled = false;
+                flowButton.textContent = flowButton.dataset.flow === 'cosmic'
+                    ? 'Cosmic Flow'
+                    : 'Kinetic Flow';
+            });
+            return;
+        }
+
+        window.requestAnimationFrame(predictPose);
+    }
+</script>
+</body>
+</html>

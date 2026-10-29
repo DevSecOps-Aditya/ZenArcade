@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenArcade | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #09090b;
+            color: #f4f4f5;
+        }
+        .glass-panel {
+            background: rgba(18, 19, 24, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-emerald {
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.25);
+        }
+        .glow-teal {
+            box-shadow: 0 0 25px rgba(20, 184, 166, 0.25);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(18, 19, 24, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(16, 185, 129, 0.5);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col custom-scrollbar overflow-x-hidden">
+
+<!-- Header / Navbar -->
+<header class="sticky top-0 z-40 glass-panel border-b border-white/10 px-4 lg:px-8 py-4">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center font-bold text-xl text-zinc-950 shadow-lg glow-emerald">
+                Z
+            </div>
+            <div>
+                <h1 class="font-bold text-lg md:text-xl tracking-tight bg-gradient-to-r from-emerald-400 to-teal-200 bg-clip-text text-transparent">
+                    ZenArcade
+                </h1>
+                <p class="text-xs text-zinc-400">Mindful Movement & Real-Day Tracker</p>
+            </div>
+        </div>
+
+        <!-- Global Stats Ribbon -->
+        <div class="flex items-center space-x-4 bg-zinc-900/80 px-4 py-2 rounded-xl border border-white/5 text-xs md:text-sm">
+            <div class="flex items-center space-x-1.5">
+                <span class="text-emerald-400 font-semibold">Day <span id="navJourneyDay">1</span></span>
+                <span class="text-zinc-500">•</span>
+            </div>
+            <div class="flex items-center space-x-1.5">
+                <span class="text-amber-400">🔥</span>
+                <span class="font-semibold text-zinc-200" id="navStreak">0 Days Streak</span>
+            </div>
+            <div class="flex items-center space-x-1.5">
+                <span class="text-teal-400">🧘</span>
+                <span class="font-semibold text-zinc-200" id="navPacksCount">0 Finished</span>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <nav class="flex items-center space-x-1 bg-zinc-900/90 p-1 rounded-xl border border-white/10 text-xs md:text-sm font-medium">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-3 py-1.5 rounded-lg transition-all text-white bg-emerald-500/20 text-emerald-300">
+                Dashboard
+            </button>
+            <button onclick="switchTab('packs')" id="tab-packs" class="px-3 py-1.5 rounded-lg transition-all text-zinc-400 hover:text-zinc-200">
+                Yoga Packs
+            </button>
+            <button onclick="switchTab('kinematics')" id="tab-kinematics" class="px-3 py-1.5 rounded-lg transition-all text-zinc-400 hover:text-zinc-200">
+                2D Kinematics
+            </button>
+            <button onclick="switchTab('audio')" id="tab-audio" class="px-3 py-1.5 rounded-lg transition-all text-zinc-400 hover:text-zinc-200">
+                Audio Sanctuary
+            </button>
+            <a href="yoga.html" class="px-3 py-1.5 rounded-lg transition-all text-zinc-400 hover:text-zinc-200">
+                ZenArcade AI
+            </a>
+        </nav>
+    </div>
+</header>
+
+<!-- Main Container -->
+<main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 space-y-8">
+
+    <!-- TAB 1: DASHBOARD & TRACKING -->
+    <section id="sec-dashboard" class="space-y-8">
+
+        <!-- Hero Journey Status Card -->
+        <div class="glass-panel p-6 lg:p-8 rounded-3xl relative overflow-hidden border border-emerald-500/20">
+            <div class="absolute -right-20 -top-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 relative z-10">
+                <div class="space-y-1">
+                    <span class="text-xs uppercase tracking-wider text-emerald-400 font-semibold">Current Progress</span>
+                    <div class="text-3xl lg:text-4xl font-extrabold text-white" id="dashJourneyDayTitle">Day 1</div>
+                    <p class="text-xs text-zinc-400" id="dashStartDateDesc">Journey started: Not yet initiated</p>
+                </div>
+
+                <div class="space-y-1 border-t md:border-t-0 md:border-l border-white/10 pt-4 md:pt-0 md:pl-6">
+                    <span class="text-xs uppercase tracking-wider text-amber-400 font-semibold">Active Streak</span>
+                    <div class="text-3xl lg:text-4xl font-extrabold text-amber-300" id="dashActiveStreak">0 Days</div>
+                    <p class="text-xs text-zinc-400" id="dashBestStreak">Best streak: 0 days</p>
+                </div>
+
+                <div class="space-y-1 border-t md:border-t-0 md:border-l border-white/10 pt-4 md:pt-0 md:pl-6">
+                    <span class="text-xs uppercase tracking-wider text-teal-400 font-semibold">Packs Completed</span>
+                    <div class="text-3xl lg:text-4xl font-extrabold text-teal-300" id="dashTotalPacks">0</div>
+                    <p class="text-xs text-zinc-400">Total finished sessions</p>
+                </div>
+
+                <div class="flex flex-col justify-between border-t md:border-t-0 md:border-l border-white/10 pt-4 md:pt-0 md:pl-6">
+                    <span class="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Today's Goal</span>
+                    <div id="dashTodayStatus" class="my-2 inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20 w-fit">
+                        ⚠️ Awaiting Session
+                    </div>
+                    <button onclick="switchTab('packs')" class="w-full py-2 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 font-semibold text-zinc-950 text-xs shadow-lg hover:opacity-95 transition-all">
+                        Start Today's Flow →
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar Grid & History Log -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- 30-Day Real Calendar Tracker -->
+            <div class="lg:col-span-2 glass-panel p-6 rounded-3xl space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-bold text-white">30-Day Real Progression Grid</h2>
+                        <p class="text-xs text-zinc-400">Calendar view mapping actual logged days since Day 1</p>
+                    </div>
+                    <div class="flex items-center space-x-3 text-xs">
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Done</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span> Today</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-zinc-800 border border-white/20"></span> Pending</span>
+                    </div>
+                </div>
+
+                <!-- Grid of 30 days -->
+                <div id="calendarGrid" class="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-10 gap-3 pt-2">
+                    <!-- Rendered dynamically -->
+                </div>
+            </div>
+
+            <!-- History Log Sidebar -->
+            <div class="glass-panel p-6 rounded-3xl space-y-4 flex flex-col justify-between">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-bold text-white">Logged History</h2>
+                        <span class="text-xs text-zinc-500" id="historyLogCount">0 Entries</span>
+                    </div>
+
+                    <div id="historyLogList" class="space-y-3 max-h-[340px] overflow-y-auto custom-scrollbar pr-1">
+                        <div class="text-center py-8 text-zinc-500 text-xs">
+                            No sessions logged yet. Complete a yoga pack to record your first entry.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-white/5">
+                    <button onclick="confirmResetJourney()" class="w-full py-2 px-3 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/10 text-xs transition-all font-medium flex items-center justify-center gap-2">
+                        <span>🗑️</span> Reset My Journey
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TAB 2: YOGA PACKS & LIVE PLAYER -->
+    <section id="sec-packs" class="space-y-8 hidden">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-2xl font-bold text-white">Yoga Packs</h2>
+                <p class="text-xs text-zinc-400">Select a practice to log for today's real day progression.</p>
+            </div>
+        </div>
+
+        <!-- Yoga Packs Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="packsContainer">
+            <!-- Dynamic Packs standard rendering -->
+        </div>
+
+        <!-- Active Workout Player View (Hidden by default) -->
+        <div id="playerModal" class="glass-panel p-6 lg:p-8 rounded-3xl border border-teal-500/30 space-y-6 hidden">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-white/10">
+                <div>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-teal-400" id="playerPackCategory">Morning Vitality</span>
+                    <h3 class="text-2xl font-bold text-white" id="playerPackTitle">Sunrise Flow & Alignment</h3>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="text-right">
+                        <div class="text-xs text-zinc-400">Session Timer</div>
+                        <div class="text-2xl font-mono font-bold text-emerald-400" id="playerTimer">00:00</div>
+                    </div>
+                    <button onclick="closePlayer()" class="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs">
+                        ✖ Exit
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Canvas Visualizer in Player -->
+                <div class="lg:col-span-2 glass-panel p-4 rounded-2xl flex flex-col items-center justify-center min-h-[300px] relative">
+                    <canvas id="playerCanvas" width="500" height="320" class="max-w-full rounded-xl"></canvas>
+                    <div class="absolute bottom-4 left-4 right-4 flex justify-between items-center text-xs bg-zinc-950/80 px-4 py-2 rounded-xl border border-white/5">
+                        <span class="text-zinc-300" id="playerPoseTarget">Target: Spine Lengthening</span>
+                        <span class="text-emerald-400 font-semibold" id="playerPoseAngle">Angle: 120°</span>
+                    </div>
+                </div>
+
+                <!-- Pose Step Sequence Sidebar -->
+                <div class="glass-panel p-4 rounded-2xl space-y-4 flex flex-col justify-between">
+                    <div>
+                        <h4 class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Current Pose Step</h4>
+                        <h5 class="text-xl font-bold text-emerald-300" id="playerStepName">Mountain Pose (Tadasana)</h5>
+                        <p class="text-xs text-zinc-300 mt-2 leading-relaxed" id="playerStepInstructions">
+                            Stand tall with feet hip-width apart. Ground all four corners of your feet into the earth while reaching the crown of your head upward.
+                        </p>
+                    </div>
+
+                    <div class="space-y-3 pt-4 border-t border-white/10">
+                        <div class="flex items-center justify-between text-xs text-zinc-400">
+                            <span>Step <span id="playerCurrentStepIndex">1</span> of <span id="playerTotalSteps">4</span></span>
+                            <span id="playerStepDuration">30 sec</span>
+                        </div>
+
+                        <div class="flex space-x-2">
+                            <button onclick="prevStep()" class="flex-1 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs text-white">
+                                ← Prev Pose
+                            </button>
+                            <button onclick="nextStep()" class="flex-1 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold">
+                                Next Pose →
+                            </button>
+                        </div>
+
+                        <button onclick="finishWorkoutAndLog()" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-zinc-950 font-bold text-sm shadow-lg hover:opacity-95 transition-all">
+                            ✨ Finish Pack & Log Day
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TAB 3: 2D KINEMATICS ENGINE -->
+    <section id="sec-kinematics" class="space-y-6 hidden">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h2 class="text-2xl font-bold text-white">2D Skeletal Kinematics Engine</h2>
+                <p class="text-xs text-zinc-400">Interactive joint-drag preview, target muscle biomechanics, and pose vector synthesis.</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="setInteractivePose('mountain')" class="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-200">Mountain</button>
+                <button onclick="setInteractivePose('warrior2')" class="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-200">Warrior II</button>
+                <button onclick="setInteractivePose('tree')" class="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-200">Tree Pose</button>
+                <button onclick="setInteractivePose('downwardDog')" class="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-200">Downward Dog</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Kinematics Canvas -->
+            <div class="lg:col-span-2 glass-panel p-4 rounded-3xl flex flex-col items-center justify-center relative min-h-[420px]">
+                <canvas id="kinematicsCanvas" width="600" height="420" class="max-w-full rounded-2xl cursor-grab active:cursor-grabbing"></canvas>
+                <div class="absolute top-6 left-6 bg-zinc-950/80 px-3 py-2 rounded-xl border border-white/10 text-xs space-y-1">
+                    <div class="text-emerald-400 font-semibold flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Kinematic Canvas Active
+                    </div>
+                    <div class="text-zinc-400">Drag blue joint nodes to alter posture.</div>
+                </div>
+            </div>
+
+            <!-- Kinematics Details Panel -->
+            <div class="glass-panel p-6 rounded-3xl space-y-6 flex flex-col justify-between">
+                <div class="space-y-4">
+                    <h3 class="text-lg font-bold text-white" id="kinematicsTitle">Warrior II (Virabhadrasana II)</h3>
+                    <p class="text-xs text-zinc-300 leading-relaxed" id="kinematicsDesc">
+                        Strengthens hips, legs, and shoulder stabilizers while opening chest muscles and torso alignment.
+                    </p>
+
+                    <div class="space-y-3 pt-2">
+                        <span class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Biomechanics & Activation</span>
+                        <div class="space-y-2">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-zinc-300">Quadriceps Activation</span>
+                                    <span class="text-emerald-400">88%</span>
+                                </div>
+                                <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-emerald-500 rounded-full" style="width: 88%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-zinc-300">Hip Flexor Mobility</span>
+                                    <span class="text-teal-400">75%</span>
+                                </div>
+                                <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-teal-500 rounded-full" style="width: 75%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300">
+                    💡 <strong>Bio-Tip:</strong> Ground the outer edge of your rear foot firmly into the ground to maintain lower extremity stability.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TAB 4: AUDIO SANCTUARY -->
+    <section id="sec-audio" class="space-y-6 hidden">
+        <div>
+            <h2 class="text-2xl font-bold text-white">Audio Sanctuary</h2>
+            <p class="text-xs text-zinc-400">Web Audio API soundscapes and meditative tones synthesized directly in real time.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Soundscape Card 1 -->
+            <div class="glass-panel p-6 rounded-3xl space-y-4 border border-white/5 hover:border-emerald-500/30 transition-all">
+                <div class="flex items-center justify-between">
+                    <span class="text-2xl">🌧️</span>
+                    <button onclick="toggleSoundscape('rain')" id="btnSoundRain" class="px-4 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+                        Play Sound
+                    </button>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-white">Soft Rain Ambient</h3>
+                    <p class="text-xs text-zinc-400 mt-1">White noise pink filter synthesized for relaxed focus and breathing control.</p>
+                </div>
+            </div>
+
+            <!-- Soundscape Card 2 -->
+            <div class="glass-panel p-6 rounded-3xl space-y-4 border border-white/5 hover:border-teal-500/30 transition-all">
+                <div class="flex items-center justify-between">
+                    <span class="text-2xl">🧠</span>
+                    <button onclick="toggleSoundscape('binaural')" id="btnSoundBinaural" class="px-4 py-2 rounded-xl bg-teal-500/20 border border-teal-500/30 text-teal-300 text-xs font-semibold">
+                        Play Sound
+                    </button>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-white">Alpha Waves 10Hz</h3>
+                    <p class="text-xs text-zinc-400 mt-1">Dual tone frequency offset designed to encourage calm mental clarity.</p>
+                </div>
+            </div>
+
+            <!-- Soundscape Card 3 -->
+            <div class="glass-panel p-6 rounded-3xl space-y-4 border border-white/5 hover:border-amber-500/30 transition-all">
+                <div class="flex items-center justify-between">
+                    <span class="text-2xl">🥣</span>
+                    <button onclick="triggerSingingBowl()" class="px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold">
+                        Strike Bowl
+                    </button>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-white">Singing Bowl Tone</h3>
+                    <p class="text-xs text-zinc-400 mt-1">Warm harmonic resonance synthesized for transitions and mindful pauses.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- Modal Confirmation for Reset -->
+<div id="resetModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="glass-panel p-6 max-w-md w-full rounded-3xl space-y-4 border border-red-500/30">
+        <h3 class="text-xl font-bold text-white">Reset Entire Journey?</h3>
+        <p class="text-xs text-zinc-300 leading-relaxed">
+            This will reset your Day 1 start date, set active streaks to 0, and clear your workout calendar history. This action cannot be undone.
+        </p>
+        <div class="flex justify-end space-x-3 pt-4">
+            <button onclick="closeResetModal()" class="px-4 py-2 rounded-xl bg-zinc-800 text-zinc-300 text-xs hover:bg-zinc-700">Cancel</button>
+            <button onclick="executeResetJourney()" class="px-4 py-2 rounded-xl bg-red-600 text-white font-semibold text-xs hover:bg-red-500">Confirm Reset</button>
+        </div>
+    </div>
+</div>
+
+<!-- Celebration Modal -->
+<div id="celebrationModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="glass-panel p-8 max-w-md w-full rounded-3xl text-center space-y-4 border border-emerald-500/40 glow-emerald">
+        <div class="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-3xl mx-auto">
+            🎉
+        </div>
+        <h3 class="text-2xl font-bold text-white">Session Logged!</h3>
+        <p class="text-xs text-zinc-300 leading-relaxed" id="celebrationDesc">
+            Awesome effort! You completed today's practice and maintained your progression sequence.
+        </p>
+        <button onclick="closeCelebrationModal()" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-zinc-950 font-bold text-sm shadow-lg hover:opacity-95 transition-all">
+            Return to Dashboard
+        </button>
+    </div>
+</div>
+
+<!-- Script Section -->
+<script>
+    /* ==========================================================================
+       STATE & STORAGE SYSTEM
+       ========================================================================== */
+    const STORAGE_KEY = 'AlphaTense_User_Journey_V2';
+
+    let appState = {
+        day1StartDate: null,      // Date string ISO: YYYY-MM-DD
+        activeStreak: 0,
+        highestStreak: 0,
+        totalPacksCompleted: 0,
+        completedDates: [],       // Array of date strings: ['YYYY-MM-DD', ...]
+        historyLogs: []           // Array of objects: { packId, title, duration, dateStr, timestamp }
+    };
+
+    // Standard Yoga Packs List
+    const YOGA_PACKS = [
+        {
+            id: 'morning_vitality',
+            title: 'Morning Vitality Pack',
+            category: 'Morning Practice',
+            duration: '8 mins',
+            level: 'Beginner',
+            description: 'Gentle spinal warm-ups and breathing flow to activate circulation for the day ahead.',
+            poses: [
+                { name: 'Mountain Pose (Tadasana)', duration: 30, target: 'Spine & Posture', angle: '180°', preset: 'mountain', instructions: 'Stand tall with weight balanced evenly over both feet. Reach crown upward.' },
+                { name: 'Warrior II (Virabhadrasana II)', duration: 45, target: 'Quadriceps & Hips', angle: '90°', preset: 'warrior2', instructions: 'Step feet wide, sink hips low over front knee while keeping arms parallel.' },
+                { name: 'Tree Pose (Vrksasana)', duration: 45, target: 'Balance & Core', angle: '45°', preset: 'tree', instructions: 'Find a focal point, root through standing leg, place sole of foot against inner thigh or calf.' }
+            ]
+        },
+        {
+            id: 'core_alignment',
+            title: 'Core Alignment Pack',
+            category: 'Strength & Posture',
+            duration: '12 mins',
+            level: 'Intermediate',
+            description: 'Targeted pelvic stability and abdominal activation for spinal integrity.',
+            poses: [
+                { name: 'Plank Foundation', duration: 40, target: 'Core & Deltoids', angle: '180°', preset: 'mountain', instructions: 'Engage core, press floor away, maintain straight neutral line from head to heels.' },
+                { name: 'Downward Dog', duration: 50, target: 'Hamstrings & Shoulders', angle: '75°', preset: 'downwardDog', instructions: 'Press hips up and back, lengthen spine, press heels gently toward floor.' }
+            ]
+        },
+        {
+            id: 'evening_unwind',
+            title: 'Evening Unwind Pack',
+            category: 'Restorative',
+            duration: '10 mins',
+            level: 'All Levels',
+            description: 'Slowing breathing rhythm and soothing tension after a busy day.',
+            poses: [
+                { name: 'Child Pose Rest', duration: 60, target: 'Lower Back', angle: '30°', preset: 'downwardDog', instructions: 'Sink hips back onto heels, extend arms forward, rest forehead on mat.' },
+                { name: 'Tree Pose Calm', duration: 45, target: 'Focus & Balance', angle: '45°', preset: 'tree', instructions: 'Softly gaze forward, ground through feet, focus on steady nasal breathing.' }
+            ]
+        },
+        {
+            id: 'full_body_flow',
+            title: 'Full Body Flow Pack',
+            category: 'Complete Session',
+            duration: '15 mins',
+            level: 'Intermediate',
+            description: 'Full body movement synthesis connecting breath to movement.',
+            poses: [
+                { name: 'Mountain Alignment', duration: 30, target: 'Full Body Grounding', angle: '180°', preset: 'mountain', instructions: 'Ground deeply, stack hips over ankles, broaden across collarbones.' },
+                { name: 'Warrior II Power', duration: 60, target: 'Lower Body Strength', angle: '90°', preset: 'warrior2', instructions: 'Sink deep into warrior stance, gaze over front fingertips.' },
+                { name: 'Downward Dog Flow', duration: 60, target: 'Posterior Chain', angle: '75°', preset: 'downwardDog', instructions: 'Pedal heels softly, lengthen hamstrings and back line.' }
+            ]
+        }
+    ];
+
+    /* Helper Date utilities */
+    function getTodayDateStr() {
+        const today = new Date();
+        return today.toISOString().split('T')[0];
+    }
+
+    function parseDateStr(str) {
+        const parts = str.split('-');
+        return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+
+    function calculateDaysBetween(d1Str, d2Str) {
+        const d1 = parseDateStr(d1Str);
+        const d2 = parseDateStr(d2Str);
+        const diffTime = Math.abs(d2 - d1);
+        return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    /* Load & Save App State */
+    function loadState() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                appState = JSON.parse(saved);
+            } catch(e) {
+                console.error("Failed to parse local storage data", e);
+            }
+        }
+        recalculateStreak();
+        updateUI();
+    }
+
+    function saveState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        updateUI();
+    }
+
+    /* Recalculate Streaks based on calendar dates */
+    function recalculateStreak() {
+        if (!appState.completedDates || appState.completedDates.length === 0) {
+            appState.activeStreak = 0;
+            return;
+        }
+
+        const sortedDates = [...new Set(appState.completedDates)].sort();
+        const todayStr = getTodayDateStr();
+        const yesterdayStr = getOffsetDateStr(todayStr, -1);
+
+        let currentStreak = 0;
+        let checkDate = sortedDates.includes(todayStr) ? todayStr : (sortedDates.includes(yesterdayStr) ? yesterdayStr : null);
+
+        if (checkDate) {
+            while (sortedDates.includes(checkDate)) {
+                currentStreak++;
+                checkDate = getOffsetDateStr(checkDate, -1);
+            }
+        }
+
+        appState.activeStreak = currentStreak;
+        if (currentStreak > (appState.highestStreak || 0)) {
+            appState.highestStreak = currentStreak;
+        }
+    }
+
+    function getOffsetDateStr(baseDateStr, offsetDays) {
+        const d = parseDateStr(baseDateStr);
+        d.setDate(d.getDate() + offsetDays);
+        return d.toISOString().split('T')[0];
+    }
+
+    /* Calculate Current Journey Day (Day 1, Day 2, etc.) */
+    function getCurrentProgramDay() {
+        if (!appState.day1StartDate) return 1;
+        const todayStr = getTodayDateStr();
+        const diff = calculateDaysBetween(appState.day1StartDate, todayStr);
+        return diff + 1; // Day 1 based
+    }
+
+    /* ==========================================================================
+       UI UPDATE ROUTINES
+       ========================================================================== */
+    function updateUI() {
+        const todayStr = getTodayDateStr();
+        const currentDay = getCurrentProgramDay();
+
+        // Header Ribbon
+        document.getElementById('navJourneyDay').textContent = appState.day1StartDate ? currentDay : '1';
+        document.getElementById('navStreak').textContent = `${appState.activeStreak} Day${appState.activeStreak === 1 ? '' : 's'}`;
+        document.getElementById('navPacksCount').textContent = `${appState.totalPacksCompleted} Finished`;
+
+        // Hero Dashboard Card
+        document.getElementById('dashJourneyDayTitle').textContent = appState.day1StartDate ? `Day ${currentDay}` : 'Day 1';
+        document.getElementById('dashStartDateDesc').textContent = appState.day1StartDate ? `Started: ${appState.day1StartDate}` : 'Start session to initialize Day 1';
+        document.getElementById('dashActiveStreak').textContent = `${appState.activeStreak} Days`;
+        document.getElementById('dashBestStreak').textContent = `Best streak: ${appState.highestStreak || 0} days`;
+        document.getElementById('dashTotalPacks').textContent = appState.totalPacksCompleted;
+
+        const dashTodayStatus = document.getElementById('dashTodayStatus');
+        const hasDoneToday = appState.completedDates.includes(todayStr);
+        if (hasDoneToday) {
+            dashTodayStatus.className = "my-2 inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 w-fit";
+            dashTodayStatus.innerHTML = "✅ Today Completed!";
+        } else {
+            dashTodayStatus.className = "my-2 inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30 w-fit";
+            dashTodayStatus.innerHTML = "⚠️ Session Pending";
+        }
+
+        // Render Calendar Grid
+        renderCalendarGrid();
+
+        // Render History Logs
+        renderHistoryLogs();
+    }
+
+    /* Render 30-Day Grid mapped to real calendar dates */
+    function renderCalendarGrid() {
+        const gridContainer = document.getElementById('calendarGrid');
+        gridContainer.innerHTML = '';
+
+        const startDate = appState.day1StartDate ? appState.day1StartDate : getTodayDateStr();
+        const todayStr = getTodayDateStr();
+
+        for (let i = 0; i < 30; i++) {
+            const dateForCell = getOffsetDateStr(startDate, i);
+            const isCompleted = appState.completedDates.includes(dateForCell);
+            const isToday = (dateForCell === todayStr);
+
+            const cell = document.createElement('div');
+            cell.className = `p-3 rounded-2xl border flex flex-col items-center justify-between min-h-[75px] transition-all text-xs relative ${
+                isCompleted
+                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-200'
+                    : isToday
+                        ? 'bg-teal-500/10 border-teal-500/50 text-teal-300 ring-1 ring-teal-500/50'
+                        : 'bg-zinc-900/40 border-white/5 text-zinc-500'
+            }`;
+
+            cell.innerHTML = `
+                    <span class="font-bold text-[10px] uppercase opacity-75">Day ${i + 1}</span>
+                    <span class="font-semibold text-xs my-1">${dateForCell.slice(5)}</span>
+                    <span class="text-xs">${isCompleted ? '✓' : (isToday ? 'Today' : '•')}</span>
+                `;
+
+            gridContainer.appendChild(cell);
+        }
+    }
+
+    /* Render History List */
+    function renderHistoryLogs() {
+        const listContainer = document.getElementById('historyLogList');
+        const countLabel = document.getElementById('historyLogCount');
+
+        const logs = appState.historyLogs || [];
+        countLabel.textContent = `${logs.length} Logged`;
+
+        if (logs.length === 0) {
+            listContainer.innerHTML = `
+                    <div class="text-center py-8 text-zinc-500 text-xs">
+                        No sessions logged yet. Complete a yoga pack to record your first entry.
+                    </div>
+                `;
+            return;
+        }
+
+        listContainer.innerHTML = logs.slice().reverse().map(log => `
+                <div class="p-3 rounded-2xl bg-zinc-900/60 border border-white/5 flex items-center justify-between text-xs">
+                    <div>
+                        <div class="font-semibold text-zinc-200">${log.title}</div>
+                        <div class="text-[10px] text-zinc-400">${log.dateStr} • ${log.duration}</div>
+                    </div>
+                    <span class="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-400 font-mono text-[10px] border border-emerald-500/20">
+                        Logged
+                    </span>
+                </div>
+            `).join('');
+    }
+
+    /* Render Yoga Packs UI Cards */
+    function renderPacks() {
+        const container = document.getElementById('packsContainer');
+        container.innerHTML = YOGA_PACKS.map(pack => `
+                <div class="glass-panel p-6 rounded-3xl border border-white/5 hover:border-emerald-500/30 transition-all flex flex-col justify-between space-y-4">
+                    <div class="space-y-2">
+                        <span class="text-[10px] uppercase tracking-wider font-semibold text-emerald-400 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                            ${pack.category}
+                        </span>
+                        <h3 class="text-lg font-bold text-white pt-1">${pack.title}</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">${pack.description}</p>
+                    </div>
+
+                    <div class="space-y-3 pt-2">
+                        <div class="flex items-center justify-between text-xs text-zinc-400 border-t border-white/5 pt-3">
+                            <span>⏱️ ${pack.duration}</span>
+                            <span>🎯 ${pack.level}</span>
+                        </div>
+                        <button onclick="startPack('${pack.id}')" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 font-semibold text-zinc-950 text-xs shadow-lg hover:opacity-95 transition-all flex items-center justify-center gap-1.5">
+                            <span>▶</span> Start Session
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+    }
+
+    /* ==========================================================================
+       TAB SWITCHING LOGIC
+       ========================================================================== */
+    function switchTab(tabId) {
+        ['dashboard', 'packs', 'kinematics', 'audio'].forEach(t => {
+            const sec = document.getElementById(`sec-${t}`);
+            const btn = document.getElementById(`tab-${t}`);
+            if (t === tabId) {
+                sec.classList.remove('hidden');
+                btn.className = "px-3 py-1.5 rounded-lg transition-all text-white bg-emerald-500/20 text-emerald-300";
+            } else {
+                sec.classList.add('hidden');
+                btn.className = "px-3 py-1.5 rounded-lg transition-all text-zinc-400 hover:text-zinc-200";
+            }
+        });
+
+        if (tabId === 'kinematics') {
+            initKinematicsCanvas();
+        }
+    }
+
+    /* ==========================================================================
+       WORKOUT PLAYER ENGINE
+       ========================================================================== */
+    let activePack = null;
+    let currentStepIdx = 0;
+    let playerInterval = null;
+    let sessionSeconds = 0;
+
+    function startPack(packId) {
+        activePack = YOGA_PACKS.find(p => p.id === packId);
+        if (!activePack) return;
+
+        currentStepIdx = 0;
+        sessionSeconds = 0;
+
+        document.getElementById('playerPackCategory').textContent = activePack.category;
+        document.getElementById('playerPackTitle').textContent = activePack.title;
+        document.getElementById('playerTotalSteps').textContent = activePack.poses.length;
+
+        document.getElementById('playerModal').classList.remove('hidden');
+        window.scrollTo({ top: document.getElementById('playerModal').offsetTop - 80, behavior: 'smooth' });
+
+        updatePlayerStep();
+
+        if (playerInterval) clearInterval(playerInterval);
+        playerInterval = setInterval(() => {
+            sessionSeconds++;
+            const mins = String(Math.floor(sessionSeconds / 60)).padStart(2, '0');
+            const secs = String(sessionSeconds % 60).padStart(2, '0');
+            document.getElementById('playerTimer').textContent = `${mins}:${secs}`;
+        }, 1000);
+    }
+
+    function updatePlayerStep() {
+        if (!activePack) return;
+        const pose = activePack.poses[currentStepIdx];
+        document.getElementById('playerStepName').textContent = pose.name;
+        document.getElementById('playerStepInstructions').textContent = pose.instructions;
+        document.getElementById('playerCurrentStepIndex').textContent = currentStepIdx + 1;
+        document.getElementById('playerStepDuration').textContent = `${pose.duration} sec`;
+        document.getElementById('playerPoseTarget').textContent = `Target: ${pose.target}`;
+        document.getElementById('playerPoseAngle').textContent = `Angle: ${pose.angle}`;
+
+        // Render static visualization pose frame
+        drawPoseOnCanvas('playerCanvas', pose.preset);
+    }
+
+    function nextStep() {
+        if (!activePack) return;
+        if (currentStepIdx < activePack.poses.length - 1) {
+            currentStepIdx++;
+            updatePlayerStep();
+            playTone(520, 0.15); // Interval bell sound
+        }
+    }
+
+    function prevStep() {
+        if (!activePack) return;
+        if (currentStepIdx > 0) {
+            currentStepIdx--;
+            updatePlayerStep();
+        }
+    }
+
+    function closePlayer() {
+        if (playerInterval) clearInterval(playerInterval);
+        document.getElementById('playerModal').classList.add('hidden');
+    }
+
+    /* Complete & Log Journey Progression */
+    function finishWorkoutAndLog() {
+        closePlayer();
+        const todayStr = getTodayDateStr();
+
+        // Set Day 1 if not initialized yet
+        if (!appState.day1StartDate) {
+            appState.day1StartDate = todayStr;
+        }
+
+        // Record completed date if not present
+        if (!appState.completedDates.includes(todayStr)) {
+            appState.completedDates.push(todayStr);
+        }
+
+        appState.totalPacksCompleted += 1;
+
+        // Save history entry
+        appState.historyLogs.push({
+            packId: activePack.id,
+            title: activePack.title,
+            duration: activePack.duration,
+            dateStr: todayStr,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+
+        recalculateStreak();
+        saveState();
+
+        // Play celebratory audio chime & open celebration modal
+        playCelebrationSound();
+        document.getElementById('celebrationDesc').textContent = `Awesome dedication! You completed the ${activePack.title}. Day ${getCurrentProgramDay()} is now badged as finished.`;
+        document.getElementById('celebrationModal').classList.remove('hidden');
+    }
+
+    function closeCelebrationModal() {
+        document.getElementById('celebrationModal').classList.add('hidden');
+        switchTab('dashboard');
+    }
+
+    /* Reset Modal Routines */
+    function confirmResetJourney() {
+        document.getElementById('resetModal').classList.remove('hidden');
+    }
+
+    function closeResetModal() {
+        document.getElementById('resetModal').classList.add('hidden');
+    }
+
+    function executeResetJourney() {
+        appState = {
+            day1StartDate: null,
+            activeStreak: 0,
+            highestStreak: 0,
+            totalPacksCompleted: 0,
+            completedDates: [],
+            historyLogs: []
+        };
+        saveState();
+        closeResetModal();
+    }
+
+    /* ==========================================================================
+       2D SKELETAL CANVAS ENGINE (Interactive Joints & Pose Rendering)
+       ========================================================================== */
+    let interactiveJoints = [];
+    let draggedJoint = null;
+    const PRESET_POSES = {
+        mountain: [
+            { id: 'head', x: 300, y: 80 },
+            { id: 'neck', x: 300, y: 110 },
+            { id: 'lShoulder', x: 270, y: 130 },
+            { id: 'rShoulder', x: 330, y: 130 },
+            { id: 'lElbow', x: 260, y: 190 },
+            { id: 'rElbow', x: 340, y: 190 },
+            { id: 'lWrist', x: 255, y: 250 },
+            { id: 'rWrist', x: 345, y: 250 },
+            { id: 'hip', x: 300, y: 220 },
+            { id: 'lKnee', x: 285, y: 300 },
+            { id: 'rKnee', x: 315, y: 300 },
+            { id: 'lAnkle', x: 280, y: 380 },
+            { id: 'rAnkle', x: 320, y: 380 }
+        ],
+        warrior2: [
+            { id: 'head', x: 300, y: 100 },
+            { id: 'neck', x: 300, y: 130 },
+            { id: 'lShoulder', x: 270, y: 145 },
+            { id: 'rShoulder', x: 330, y: 145 },
+            { id: 'lElbow', x: 190, y: 145 },
+            { id: 'rElbow', x: 410, y: 145 },
+            { id: 'lWrist', x: 120, y: 145 },
+            { id: 'rWrist', x: 480, y: 145 },
+            { id: 'hip', x: 300, y: 240 },
+            { id: 'lKnee', x: 200, y: 280 },
+            { id: 'rKnee', x: 380, y: 300 },
+            { id: 'lAnkle', x: 180, y: 370 },
+            { id: 'rAnkle', x: 440, y: 370 }
+        ],
+        tree: [
+            { id: 'head', x: 300, y: 70 },
+            { id: 'neck', x: 300, y: 100 },
+            { id: 'lShoulder', x: 270, y: 120 },
+            { id: 'rShoulder', x: 330, y: 120 },
+            { id: 'lElbow', x: 240, y: 90 },
+            { id: 'rElbow', x: 360, y: 90 },
+            { id: 'lWrist', x: 300, y: 60 },
+            { id: 'rWrist', x: 300, y: 60 },
+            { id: 'hip', x: 300, y: 210 },
+            { id: 'lKnee', x: 300, y: 290 },
+            { id: 'rKnee', x: 370, y: 250 },
+            { id: 'lAnkle', x: 300, y: 380 },
+            { id: 'rAnkle', x: 315, y: 290 }
+        ],
+        downwardDog: [
+            { id: 'head', x: 220, y: 240 },
+            { id: 'neck', x: 240, y: 220 },
+            { id: 'lShoulder', x: 230, y: 210 },
+            { id: 'rShoulder', x: 250, y: 230 },
+            { id: 'lElbow', x: 170, y: 270 },
+            { id: 'rElbow', x: 180, y: 280 },
+            { id: 'lWrist', x: 120, y: 340 },
+            { id: 'rWrist', x: 130, y: 340 },
+            { id: 'hip', x: 340, y: 120 },
+            { id: 'lKnee', x: 400, y: 220 },
+            { id: 'rKnee', x: 410, y: 230 },
+            { id: 'lAnkle', x: 470, y: 340 },
+            { id: 'rAnkle', x: 480, y: 340 }
+        ]
+    };
+
+    const BONE_CONNECTIONS = [
+        ['head', 'neck'],
+        ['neck', 'lShoulder'], ['neck', 'rShoulder'],
+        ['lShoulder', 'lElbow'], ['lElbow', 'lWrist'],
+        ['rShoulder', 'rElbow'], ['rElbow', 'rWrist'],
+        ['neck', 'hip'],
+        ['hip', 'lKnee'], ['lKnee', 'lAnkle'],
+        ['hip', 'rKnee'], ['rKnee', 'rAnkle']
+    ];
+
+    function drawSkeleton(ctx, joints, isInteractive = false) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+        // Draw Target Glow / Aura
+        const hip = joints.find(j => j.id === 'hip');
+        if (hip) {
+            const grad = ctx.createRadialGradient(hip.x, hip.y, 20, hip.x, hip.y, 140);
+            grad.addColorStop(0, 'rgba(16, 185, 129, 0.15)');
+            grad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(hip.x, hip.y, 140, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Draw Bones
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+
+        BONE_CONNECTIONS.forEach(([j1Id, j2Id]) => {
+            const j1 = joints.find(j => j.id === j1Id);
+            const j2 = joints.find(j => j.id === j2Id);
+            if (j1 && j2) {
+                ctx.beginPath();
+                ctx.moveTo(j1.x, j1.y);
+                ctx.lineTo(j2.x, j2.y);
+                ctx.stroke();
+            }
+        });
+
+        // Draw Head
+        const head = joints.find(j => j.id === 'head');
+        if (head) {
+            ctx.fillStyle = '#14b8a6';
+            ctx.beginPath();
+            ctx.arc(head.x, head.y, 18, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Draw Joint Nodes
+        joints.forEach(j => {
+            if (j.id === 'head') return;
+            ctx.fillStyle = isInteractive ? '#38bdf8' : '#34d399';
+            ctx.beginPath();
+            ctx.arc(j.x, j.y, isInteractive ? 7 : 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#09090b';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        });
+    }
+
+    function drawPoseOnCanvas(canvasId, presetKey) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const joints = PRESET_POSES[presetKey] || PRESET_POSES.mountain;
+        drawSkeleton(ctx, joints, false);
+    }
+
+    /* Interactive Canvas Init */
+    function initKinematicsCanvas() {
+        const canvas = document.getElementById('kinematicsCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        if (interactiveJoints.length === 0) {
+            interactiveJoints = JSON.parse(JSON.stringify(PRESET_POSES.warrior2));
+        }
+
+        drawSkeleton(ctx, interactiveJoints, true);
+
+        // Setup drag events once
+        if (!canvas.dataset.initialized) {
+            canvas.dataset.initialized = "true";
+
+            const getPos = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                return {
+                    x: ((e.clientX || (e.touches && e.touches[0].clientX)) - rect.left) * scaleX,
+                    y: ((e.clientY || (e.touches && e.touches[0].clientY)) - rect.top) * scaleY
+                };
+            };
+
+            const startDrag = (e) => {
+                const pos = getPos(e);
+                draggedJoint = interactiveJoints.find(j => {
+                    const dist = Math.hypot(j.x - pos.x, j.y - pos.y);
+                    return dist < 15;
+                });
+            };
+
+            const moveDrag = (e) => {
+                if (!draggedJoint) return;
+                const pos = getPos(e);
+                draggedJoint.x = pos.x;
+                draggedJoint.y = pos.y;
+                drawSkeleton(ctx, interactiveJoints, true);
+            };
+
+            const stopDrag = () => { draggedJoint = null; };
+
+            canvas.addEventListener('mousedown', startDrag);
+            canvas.addEventListener('mousemove', moveDrag);
+            window.addEventListener('mouseup', stopDrag);
+
+            canvas.addEventListener('touchstart', startDrag);
+            canvas.addEventListener('touchmove', moveDrag);
+            window.addEventListener('touchend', stopDrag);
+        }
+    }
+
+    function setInteractivePose(presetKey) {
+        interactiveJoints = JSON.parse(JSON.stringify(PRESET_POSES[presetKey] || PRESET_POSES.mountain));
+        const titles = {
+            mountain: 'Mountain Pose (Tadasana)',
+            warrior2: 'Warrior II (Virabhadrasana II)',
+            tree: 'Tree Pose (Vrksasana)',
+            downwardDog: 'Downward-Facing Dog'
+        };
+        const descs = {
+            mountain: 'Foundation posture focusing on postural stack, core engagement, and foot pressure distribution.',
+            warrior2: 'Strengthens lower extremity stabilizers while improving hip rotation and arm extension tension.',
+            tree: 'Unilateral balance pose designed to train proprioception, foot arch strength, and core focus.',
+            downwardDog: 'Inversion pose stretching the full posterior chain while conditioning shoulder girdle stability.'
+        };
+
+        document.getElementById('kinematicsTitle').textContent = titles[presetKey];
+        document.getElementById('kinematicsDesc').textContent = descs[presetKey];
+
+        initKinematicsCanvas();
+    }
+
+    /* ==========================================================================
+       WEB AUDIO API SYNTHESIZER (Soundscapes & Chimes)
+       ========================================================================== */
+    let audioCtx = null;
+    let rainNode = null;
+    let binauralNodes = null;
+
+    function getAudioContext() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        return audioCtx;
+    }
+
+    function playTone(freq = 440, duration = 0.2, type = 'sine') {
+        try {
+            const ctx = getAudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            gain.gain.setValueAtTime(0.15, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + duration);
+        } catch(e) { console.error(e); }
+    }
+
+    function playCelebrationSound() {
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, idx) => {
+            setTimeout(() => playTone(freq, 0.4), idx * 120);
+        });
+    }
+
+    function triggerSingingBowl() {
+        try {
+            const ctx = getAudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(288, ctx.currentTime); // D4 harmonic
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 3.0);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 3.0);
+        } catch(e) { console.error(e); }
+    }
+
+    function toggleSoundscape(type) {
+        const ctx = getAudioContext();
+
+        if (type === 'rain') {
+            const btn = document.getElementById('btnSoundRain');
+            if (rainNode) {
+                rainNode.stop();
+                rainNode = null;
+                btn.textContent = 'Play Sound';
+                btn.className = "px-4 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold";
+            } else {
+                const bufferSize = ctx.sampleRate * 2;
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const output = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = Math.random() * 2 - 1;
+                }
+                const whiteNoise = ctx.createBufferSource();
+                whiteNoise.buffer = buffer;
+                whiteNoise.loop = true;
+
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 800;
+
+                const gain = ctx.createGain();
+                gain.gain.value = 0.08;
+
+                whiteNoise.connect(filter);
+                filter.connect(gain);
+                gain.connect(ctx.destination);
+
+                whiteNoise.start();
+                rainNode = whiteNoise;
+
+                btn.textContent = 'Stop Sound';
+                btn.className = "px-4 py-2 rounded-xl bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-semibold";
+            }
+        } else if (type === 'binaural') {
+            const btn = document.getElementById('btnSoundBinaural');
+            if (binauralNodes) {
+                binauralNodes.osc1.stop();
+                binauralNodes.osc2.stop();
+                binauralNodes = null;
+                btn.textContent = 'Play Sound';
+                btn.className = "px-4 py-2 rounded-xl bg-teal-500/20 border border-teal-500/30 text-teal-300 text-xs font-semibold";
+            } else {
+                const osc1 = ctx.createOscillator();
+                const osc2 = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc1.frequency.value = 200;
+                osc2.frequency.value = 210; // 10Hz Alpha offset
+                gain.gain.value = 0.08;
+
+                osc1.connect(gain);
+                osc2.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc1.start();
+                osc2.start();
+
+                binauralNodes = { osc1, osc2 };
+
+                btn.textContent = 'Stop Sound';
+                btn.className = "px-4 py-2 rounded-xl bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-semibold";
+            }
+        }
+    }
+
+    /* ==========================================================================
+       INITIALIZATION
+       ========================================================================== */
+    window.onload = function() {
+        renderPacks();
+        loadState();
+    };
+</script>
+</body>
+</html>
